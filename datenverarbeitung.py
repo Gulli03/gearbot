@@ -1,9 +1,13 @@
+# dont rename this.. see blizzapi.py. Btw Bapi is a widespread SAP Api which is extra misleading ;)
 import blizzapi as bapi
 
 def getitemtrack(bonusid: list):
+    # put docstring here
     trackstring = ""
     for id in bonusid:
         match id:
+            # you can safe a lot of space and make this easier to read by using a dict which maps the id to the string
+            # I'd also reccomend to get rid of rewriting Forscher/Abenteurer etc -> use variables..
             # Forscher
             case 10289:
                 trackstring = "(Forscher 1/8)"
@@ -112,22 +116,31 @@ def getitemtrack(bonusid: list):
     return trackstring
 
 def getcharequip(name: str, realm: str):
+    # dont use "raw", "name" as variable name (keyword in some languages)
     raw = bapi.characterequip(name, realm)
+    # better do a try int() except here and catch the error
+    # thats the more pythonic way to do it as type itself can raise an error
     if type(raw) == int:
         return raw
+
+    # you should always change the variable name if you change the content
     raw = raw["equipped_items"]
+    # you couold simplify this like this:  equip  = {"name": name, ... }
     equip = {}
     equip["name"] = name
     equip["realm"] = realm
     equip["embellishments"] = 0
 
     ilvl = 0
-
+    # the following loop should get it's own function
     equip["gear"] = []
     for item in raw:
+        # you may want to extend this later, so put ["Hemd", "Wappenrock"] in a variable caclled exclude_items at your function start
+
         if item["slot"]["name"] in ["Hemd", "Wappenrock"]:
             continue
-
+        # extending a list in a dict with a dict is a bit too cryptic..
+        # at least but the dict in a variable first, give it a good name and then append to your dict
         equip["gear"].append({
             "slot": item["slot"]["name"],
             "name": item["name"],
@@ -140,17 +153,22 @@ def getcharequip(name: str, realm: str):
         })
 
         if "bonus_list" in item:
-            equip["gear"][-1]["itemtrack"] = getitemtrack(item["bonus_list"])
+            yequip["gear"][-1]["itemtrack"] = getitemtrack(item["bonus_list"])
         else:
+            # you better initalizes this at the beginning of the function
             equip["gear"][-1]["itemtrack"] = ""
 
         ilvl += item["level"]["value"]
-
+        # Your functions should end here -> put all the bonus special stuff to another function
+        
         #
         #       Sockel
         #
         #
+        # for the following part you could put equip["gear"][-1] into a variable and just update that
+        # your should put the "["Hals", "Ring 1", "Ring 2"]" special case to a variable so you dont have to repeat hthat
         if "sockets" in item:
+            # you better initalizes this at the beginning of the function (you can remove the elif part then)
             equip["gear"][-1]["hassocket"] = True
             equip["gear"][-1]["sockets"] = []
             for sockel in item["sockets"]:
@@ -174,6 +192,10 @@ def getcharequip(name: str, realm: str):
         #       Verzauberungen
         #
         #
+        # Your functions should end here again -> put all the bonus special stuff to another function
+        # despite that all from above applies to entchantments -> reducie dict call complexity by using variables for repeated dict calls
+        # In general you should avoid extremely indented code.. 2-3 levels are readable, but anything above should be outsourced to another function
+        
         if item["slot"]["name"] in ["Waffenhand", "Schildhand", "Rücken", "Handgelenk", "Füße", "Ring 1", "Ring 2", "Brust", "Beine"]:
             equip["gear"][-1]["hasenchantment"] = True
             equip["gear"][-1]["enchantment"] = [{}]
@@ -214,7 +236,7 @@ def getcharequip(name: str, realm: str):
 
     if not equip["hasshield"]:
         ilvl += equip["gear"][-1]["ilvl"]
-    
+    # describe what you do here.. better use a variable for the 16 ;)
     ilvl = round(ilvl / 16, 2)
     equip["avgilvl"] = ilvl
 
@@ -224,7 +246,7 @@ def getcharclass(name: str, realm: str):
     raw = bapi.getcharspec(name, realm)
     if type(raw) == int:
         return raw
-    
+    # this is hardly to understand, try to use more varable assingments between directly assign this
     charclass = raw["specializations"][0]["loadouts"][0]["selected_class_talent_tree"]["name"]
 
     return charclass
@@ -252,7 +274,7 @@ def getitemmedia(itemid: int):
 
 def classarmortype(charclass: str):
     match charclass:
-
+        # same as in the first function in this file: better use a dcit mapping to make it more readable
         #   Stoff
         case "Priester":
             return "Stoff"
@@ -286,7 +308,7 @@ def classarmortype(charclass: str):
             return "Platte"
         case "Todesritter":
             return "Platte"
-        
+        # you should describe this special case
         case _:
             print(charclass)
             return ""
